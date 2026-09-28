@@ -6,6 +6,16 @@ Built with **FastAPI** (Python backend) and a responsive, offline-ready **HTML5 
 
 ---
 
+## Dashboard Preview
+
+### System Overview & Controller Telemetry
+![ABB RWS Dashboard System Overview](screenshots/system_overview.png)
+
+### 3D Digital Twin with Real-Time Kinematics & Joint Angles
+![ABB IRB 1660ID 3D Digital Twin](screenshots/digital_twin_3d.png)
+
+---
+
 ## Features
 
 - **Controller Telemetry**: Real-time status, motor state, operational mode (`AUTO`/`MANUAL`), system health, and connection latency.
@@ -100,6 +110,9 @@ rws_dashboard/
 │   │   └── style.css              # Industrial theme (ABB dark/light accents, cards, badges, modals)
 │   └── js/
 │       └── dashboard.js           # View switching, 1s/4s polling loops, API integrations, toast alerts
+├── screenshots/
+│   ├── system_overview.png        # System Overview & telemetry screenshot
+│   └── digital_twin_3d.png        # 3D Digital Twin screenshot
 ├── tests/
 │   └── test_api.py                # Automated pytest/test suite for all endpoints and RWS client
 ├── run.py                         # Single-command launcher for backend & dashboard
