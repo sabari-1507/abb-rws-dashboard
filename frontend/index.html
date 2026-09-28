@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABB Robot Web Services (RWS) Dashboard</title>
+  <!-- Google Fonts: IBM Plex Sans (UI) & IBM Plex Mono (Numeric Telemetry) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Top Header -->
+    <header class="topbar">
+      <div class="topbar-brand">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">ABB ROBOT WEB SERVICES</span>
+          <span class="brand-sub">Controller Interface</span>
+        </div>
+      </div>
+
+      <div class="topbar-status">
+        <div class="status-badge" id="topbar-conn-badge">
+          <span class="status-dot"></span>
+          <span class="status-label" id="topbar-conn-text">Connecting...</span>
+        </div>
+
+        <div class="status-chip" id="topbar-task-chip">
+          <span class="chip-label">Task:</span>
+          <span class="chip-value font-mono" id="topbar-task-text">T_ROB1</span>
+        </div>
+
+        <div class="status-chip" id="topbar-exec-chip">
+          <span class="chip-label">RAPID:</span>
+          <span class="chip-value pill" id="topbar-exec-text">STOPPED</span>
+        </div>
+
+        <div class="topbar-controls">
+          <label class="toggle-switch" title="Toggle Auto-Refresh">
+            <input type="checkbox" id="auto-refresh-toggle" checked>
+            <span class="toggle-slider"></span>
+            <span class="toggle-label">Auto-Poll</span>
+          </label>
+          <button class="btn btn-secondary btn-sm" id="btn-refresh-now" title="Refresh Now">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6"></path>
+              <path d="M1 20v-6h6"></path>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+      <!-- Sidebar Navigation (Streamlined to 3 destinations) -->
+      <aside class="sidebar">
+        <div class="sidebar-top">
+          <nav class="sidebar-nav">
+            <div class="sidebar-section-title">Navigation</div>
+            <button class="nav-item active" data-view="dashboard">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span>Overview</span>
+            </button>
+
+            <button class="nav-item" data-view="twin">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+              </svg>
+              <span>Digital Twin</span>
+            </button>
+
+            <button class="nav-item" data-view="events">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="12" y1="18" x2="12" y2="12"></line>
+                <line x1="12" y1="9" x2="12.01" y2="9"></line>
+              </svg>
+              <span>Events & Logs</span>
+            </button>
+          </nav>
+        </div>
+
+        <div class="sidebar-bottom">
+          <!-- Reference Quick Set Parameter Widget -->
+          <div class="sidebar-quickset">
+            <div class="quickset-header">
+              <span class="quickset-title">Quick Set</span>
+              <span class="quickset-badge">ROB_1</span>
+            </div>
+            <div class="form-group" style="margin-bottom: 6px;">
+              <label style="font-size: 11px; margin-bottom: 4px;">Speed Ratio (%)</label>
+              <div class="quickset-row">
+                <input type="number" id="quickset-speed-input" class="quickset-input" value="100" min="5" max="100" step="5">
+                <button class="quickset-btn" id="btn-quickset-speed" title="Apply Speed Ratio">Set</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-footer">
+            <span>IRC5 Controller</span>
+            <span class="font-mono">v6.06</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="content-area">
+        
+        <!-- ==================== VIEW 1: DASHBOARD OVERVIEW ==================== -->
+        <section class="view-panel active" id="view-dashboard">
+          <div class="view-header">
+            <div class="view-header-main">
+              <h2>System Overview</h2>
+              <p class="subtitle">Live telemetry from ABB IRC5 Controller via Robot Web Services</p>
+            </div>
+            
+            <!-- Reference Small Accent-Labeled Notification Card ("Last Event" card) -->
+            <div class="last-event-card" id="overview-last-event-card">
+              <span class="last-event-tag" id="last-event-tag">LAST EVENT</span>
+              <div class="last-event-body">
+                <div class="last-event-meta">
+                  <span class="badge badge-info" id="last-event-level">INFO</span>
+                  <span class="last-event-time" id="last-event-time">--:--:--</span>
+                </div>
+                <span class="last-event-text" id="last-event-msg">Awaiting system events...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Exactly 4 Main Status Cards -->
+          <div class="card-grid card-grid-4">
+            <!-- Card 1: Controller Status -->
+            <div class="card status-card" id="card-ctrl">
+              <div class="card-header">
+                <span class="card-title">Controller</span>
+                <span class="badge" id="dash-ctrl-badge">CONNECTED</span>
+              </div>
+              <div class="card-body">
+                <div class="metric-row">
+                  <span class="label">IP Address</span>
+                  <span class="value font-mono" id="dash-ctrl-ip">192.168.125.1</span>
+                </div>
+                <div class="metric-row">
+                  <span class="label">State</span>
+                  <span class="value" id="dash-ctrl-state">motoron</span>
+                </div>
+                <div class="metric-row">
+                  <span class="label">Operation Mode</span>
+                  <span class="value" id="dash-ctrl-mode">AUTO</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: RAPID Execution -->
+            <div class="card status-card" id="card-exec">
+              <div class="card-header">
+                <span class="card-title">RAPID Execution</span>
+                <span class="badge badge-warning" id="dash-exec-badge">STOPPED</span>
+              </div>
+              <div class="card-body">
+                <div class="metric-row">
+                  <span class="label">Cycle Mode</span>
+                  <span class="value" id="dash-exec-cycle">ONCE</span>
+                </div>
+                <div class="metric-row">
+                  <span class="label">Speed Ratio</span>
+                  <span class="value font-mono" id="dash-exec-speed">100%</span>
+                </div>
+                <div class="metric-row">
+                  <span class="label">Active Task</span>
+                  <span class="value font-mono" id="dash-exec-task">T_ROB1</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Program Pointer -->
+            <div class="card status-card" id="card-pp">
+              <div class="card-header">
+                <span class="card-title">Program Pointer</span>
+                <span class="badge badge-info" id="dash-pp-badge">PCP</span>
+              </div>
+              <div class="card-body">
+                <div class="metric-row">
+                  <span class="label">Module</span>
+                  <span class="value font-mono" id="dash-pp-mod">MainModule</span>
+                </div>
+                <div class="metric-row">
+                  <span class="label">Routine</span>
+                  <span class="value font-mono" id="dash-pp-routine">main</span>
+                </div>
+                <div class="metric-row">
+                  <span class="label">Coordinates (L,C)</span>
+                  <span class="value font-mono" id="dash-pp-pos">3,3</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4: Weld Enable & Torch Interlock -->
+            <div class="card status-card" id="card-weld">
+              <div class="card-header">
+                <span class="card-title">Weld Enable</span>
+                <span class="badge badge-success" id="dash-weld-badge">READY</span>
+              </div>
+              <div class="card-body">
+                <div class="metric-row">
+                  <span class="label">Arc Power Source</span>
+                  <span class="value" id="dash-weld-ready">Standby / OK</span>
+                </div>
+                <div class="metric-row">
+                  <span class="label">Gas & Wire Feed</span>
+                  <span class="value" id="dash-weld-feed">Purged / Engaged</span>
+                </div>
+                <div class="metric-row">
+                  <span class="label">Mastership</span>
+                  <span class="value badge badge-success" id="dash-mastership">Available</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3D Digital Twin Card (The ONE Dark Elevated Surface — #262B38) -->
+          <div class="card card-twin-dark" id="card-digital-twin-overview">
+            <div class="card-header">
+              <div>
+                <span class="card-title">ABB IRB 1660ID — 3D Digital Twin</span>
+                <div class="twin-subtitle-disclaimer">IRB1660ID-6/1.55 proportions · proxy geometry, CAD swap-in ready</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge badge-success" id="dash-twin-stream-badge">LIVE (10 Hz)</span>
+                <span class="badge badge-neutral font-mono" id="dash-twin-fps-val" style="background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.15);">60 fps</span>
+                <button class="btn btn-sm btn-secondary" onclick="dashboardApp.switchView('twin')" title="Open Dedicated 3D Workstation" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff;">Fullscreen ↗</button>
+              </div>
+            </div>
+
+            <div class="twin-overview-layout">
+              <!-- 3D Three.js Viewport -->
+              <div class="twin-canvas-box">
+                <div class="twin-canvas-wrapper" id="digital-twin-canvas-container">
+                  <div class="twin-hint-overlay">
+                    <span>🖱️ Left: Orbit | Right: Pan | Scroll: Zoom</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Live Joint Readout Sidebar with real ABB datasheet limits -->
+              <div class="joint-telemetry-list">
+                <div class="joint-item">
+                  <div class="joint-header">
+                    <span class="joint-name">J1 Base Rotation</span>
+                    <span class="joint-deg" id="dash-joint-val-1">0.0°</span>
+                  </div>
+                  <div class="joint-bar-track">
+                    <div class="joint-bar-fill" id="dash-joint-bar-1" style="width: 50%;"></div>
+                  </div>
+                  <div class="joint-limits"><span>-180°</span><span>±180° range</span><span>+180°</span></div>
+                </div>
+
+                <div class="joint-item">
+                  <div class="joint-header">
+                    <span class="joint-name">J2 Lower Arm Bend</span>
+                    <span class="joint-deg" id="dash-joint-val-2">0.0°</span>
+                  </div>
+                  <div class="joint-bar-track">
+                    <div class="joint-bar-fill" id="dash-joint-bar-2" style="width: 37.5%;"></div>
+                  </div>
+                  <div class="joint-limits"><span>-90°</span><span>+150/−90° range</span><span>+150°</span></div>
+                </div>
+
+                <div class="joint-item">
+                  <div class="joint-header">
+                    <span class="joint-name">J3 Upper Arm Bend</span>
+                    <span class="joint-deg" id="dash-joint-val-3">0.0°</span>
+                  </div>
+                  <div class="joint-bar-track">
+                    <div class="joint-bar-fill" id="dash-joint-bar-3" style="width: 75%;"></div>
+                  </div>
+                  <div class="joint-limits"><span>-238°</span><span>+79/−238° range</span><span>+79°</span></div>
+                </div>
+
+                <div class="joint-item">
+                  <div class="joint-header">
+                    <span class="joint-name">J4 Wrist Roll</span>
+                    <span class="joint-deg" id="dash-joint-val-4">0.0°</span>
+                  </div>
+                  <div class="joint-bar-track">
+                    <div class="joint-bar-fill" id="dash-joint-bar-4" style="width: 50%;"></div>
+                  </div>
+                  <div class="joint-limits"><span>-175°</span><span>±175° range</span><span>+175°</span></div>
+                </div>
+
+                <div class="joint-item">
+                  <div class="joint-header">
+                    <span class="joint-name">J5 Wrist Bend</span>
+                    <span class="joint-deg" id="dash-joint-val-5">0.0°</span>
+                  </div>
+                  <div class="joint-bar-track">
+                    <div class="joint-bar-fill" id="dash-joint-bar-5" style="width: 50%;"></div>
+                  </div>
+                  <div class="joint-limits"><span>-120°</span><span>±120° range</span><span>+120°</span></div>
+                </div>
+
+                <div class="joint-item">
+                  <div class="joint-header">
+                    <span class="joint-name">J6 Flange Turn</span>
+                    <span class="joint-deg" id="dash-joint-val-6">0.0°</span>
+                  </div>
+                  <div class="joint-bar-track">
+                    <div class="joint-bar-fill" id="dash-joint-bar-6" style="width: 50%;"></div>
+                  </div>
+                  <div class="joint-limits"><span>-400°</span><span>±400° range</span><span>+400°</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Safety & Interlocks Card -->
+          <div class="card safety-interlocks-card" style="margin-bottom: 20px;">
+            <div class="card-header">
+              <span class="card-title">Safety Circuits & Cell Interlocks</span>
+              <span class="badge badge-success">PROTECTIVE HARDWARE OK</span>
+            </div>
+            <div class="interlocks-grid">
+              <div class="interlock-item">
+                <span class="interlock-name">Emergency Stop</span>
+                <span class="interlock-status ok">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  NORMAL (Closed)
+                </span>
+              </div>
+              <div class="interlock-item">
+                <span class="interlock-name">Optical Light Curtain</span>
+                <span class="interlock-status ok">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  CLEAR (No Breach)
+                </span>
+              </div>
+              <div class="interlock-item">
+                <span class="interlock-name">Enabling Device / Gate</span>
+                <span class="interlock-status ok">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  CLOSED (Locked)
+                </span>
+              </div>
+              <div class="interlock-item">
+                <span class="interlock-name">Auto Interlock</span>
+                <span class="interlock-status ok">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  ACTIVE / ARMED
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progressive Disclosure Row: Green Outline "Subscribe"-style Pill Button -->
+          <div class="progressive-disclosure-row">
+            <div class="disclosure-info">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--good)" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+              <div>
+                <span class="disclosure-title">More tools</span>
+                <span class="disclosure-desc"> — Program execution, module management, I/O monitoring, and controller settings</span>
+              </div>
+            </div>
+            <button class="btn-more-tools" id="btn-more-tools">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span id="btn-more-tools-text">More tools</span>
+            </button>
+          </div>
+
+          <!-- Collapsible Secondary Tools Container (Hidden by default) -->
+          <div class="more-tools-container" id="more-tools-container">
+            
+            <!-- Quick Action Execution Bar -->
+            <div class="card quick-actions-bar">
+              <div class="bar-title">RAPID Program Controls</div>
+              <div class="action-buttons">
+                <button class="btn btn-success" id="quick-btn-start">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  Start Program
+                </button>
+                <button class="btn btn-danger" id="quick-btn-stop">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>
+                  Stop Program
+                </button>
+                <button class="btn btn-secondary" id="quick-btn-reset">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2.5 2v6h6M21.5 22v-6h-6"/><path d="M22 11.5A10 10 0 0 0 3.2 7.2M2 12.5a10 10 0 0 0 18.8 4.2"/></svg>
+                  Reset to Main
+                </button>
+                <button class="btn btn-secondary" id="quick-btn-step-prev">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+                  Prev Instruction
+                </button>
+                <button class="btn btn-secondary" id="quick-btn-step-next">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+                  Next Instruction
+                </button>
+              </div>
+            </div>
+
+            <!-- Split Two Columns: Loaded Modules & Module Source Inspector -->
+            <div class="split-grid">
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Loaded Modules in Task</span>
+                  <span class="badge badge-neutral" id="dash-mod-count">4</span>
+                </div>
+                <div class="table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Module Name</th>
+                        <th>Type</th>
+                        <th>Task</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dash-modules-tbody">
+                      <tr><td colspan="3" class="text-center text-muted">Loading modules...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div style="display: none;">
+                  <span id="dash-prog-mods">3</span>
+                  <span id="dash-sys-mods">1</span>
+                  <tbody id="rapid-module-list-tbody"></tbody>
+                  <tbody id="modules-installed-tbody"></tbody>
+                  <button id="btn-refresh-modules"></button>
+                  <select id="rapid-task-select"><option value="T_ROB1" selected>T_ROB1</option></select>
+                  <span id="rapid-pp-routine"></span>
+                  <span id="rapid-pp-module"></span>
+                  <span id="rapid-pp-coords"></span>
+                  <span id="rapid-exec-state"></span>
+                  <span id="rapid-exec-cycle"></span>
+                </div>
+              </div>
+
+              <div class="card" id="rapid-code-card">
+                <div class="card-header">
+                  <span class="card-title">RAPID Routine Source Inspector</span>
+                  <span class="badge badge-info" id="rapid-inspect-mod-name">MainModule</span>
+                </div>
+                <div class="card-body">
+                  <pre class="code-viewer font-mono" id="rapid-source-code" style="background: var(--bg); padding: 12px; border-radius: var(--radius-sm); max-height: 250px; overflow: auto; border: 1px solid var(--border); font-size: 12px;">Select any module to inspect its routines and source.</pre>
+                </div>
+              </div>
+            </div>
+
+            <!-- Program Pointer & Execution Deep Controls -->
+            <div class="split-grid">
+              <!-- Program Pointer Set Forms -->
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Program Pointer Manipulation</span>
+                  <div class="pointer-step-bar" style="display: flex; gap: 6px;">
+                    <button class="btn btn-sm btn-secondary" id="pp-btn-prev">Step Back</button>
+                    <button class="btn btn-sm btn-secondary" id="pp-btn-next">Step Next</button>
+                    <button class="btn btn-sm btn-secondary" id="pp-btn-reset-main">Reset to Main</button>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <form id="form-set-pp-routine" style="margin-bottom: 12px;">
+                    <label style="font-size: 12px; font-weight: 600; color: var(--navy); margin-bottom: 4px; display: block;">Set Pointer to Routine</label>
+                    <div style="display: flex; gap: 6px;">
+                      <input type="text" class="form-control" id="pp-routine-module" placeholder="Module (e.g. MainModule)" value="MainModule" required>
+                      <input type="text" class="form-control" id="pp-routine-name" placeholder="Routine (e.g. main)" value="main" required>
+                      <input type="hidden" id="pp-routine-task" value="T_ROB1">
+                      <button type="submit" class="btn btn-secondary btn-sm">Jump</button>
+                    </div>
+                  </form>
+
+                  <form id="form-set-pp-cursor">
+                    <label style="font-size: 12px; font-weight: 600; color: var(--navy); margin-bottom: 4px; display: block;">Set Pointer to Coordinates (L, C)</label>
+                    <div style="display: flex; gap: 6px;">
+                      <input type="text" class="form-control" id="pp-cursor-module" placeholder="Module" value="MainModule" required>
+                      <input type="text" class="form-control" id="pp-cursor-routine" placeholder="Routine" value="main" required>
+                      <input type="number" class="form-control" id="pp-cursor-line" placeholder="Line" value="1" style="width: 70px;" required>
+                      <input type="number" class="form-control" id="pp-cursor-col" placeholder="Col" value="1" style="width: 70px;" required>
+                      <button type="submit" class="btn btn-secondary btn-sm">Set</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Module Upload to $HOME/ -->
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Upload RAPID Source (.mod / .sys)</span>
+                </div>
+                <div class="card-body">
+                  <form id="form-upload-module">
+                    <div class="upload-dropzone" id="upload-dropzone" style="padding: 16px;">
+                      <p class="dropzone-text" style="margin: 0; font-size: 12px;">Click or drag <code>.mod</code> or <code>.sys</code> file here</p>
+                      <input type="file" id="file-module-input" accept=".mod,.sys" style="display: none;">
+                      <div id="selected-file-info" class="selected-file-info" style="display: none; margin-top: 6px;">
+                        <span id="selected-file-name" class="font-mono"></span>
+                        <span id="selected-file-size" class="text-muted"></span>
+                      </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+                      <button type="submit" class="btn btn-primary btn-sm" id="btn-upload-submit">Upload to $HOME/</button>
+                    </div>
+                  </form>
+
+                  <form id="form-load-module" style="display: none;">
+                    <input type="text" id="load-module-path" value="$HOME/MainModule.mod">
+                    <input type="text" id="load-module-task" value="T_ROB1">
+                    <input type="checkbox" id="load-module-replace" checked>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- I/O Monitoring & Signal Toggling Table -->
+            <div class="card" id="more-tools-io-card">
+              <div class="card-header">
+                <span class="card-title">Controller I/O Signal Monitoring</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="text-muted">Total: <strong id="io-total-signals">0</strong></span>
+                  <span class="text-muted">Active: <strong id="io-active-signals">0</strong></span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="io-toolbar">
+                  <div class="io-filter-tabs">
+                    <button class="filter-tab active" data-cat="all">All Signals</button>
+                    <button class="filter-tab" data-cat="digital_in">Digital In (DI)</button>
+                    <button class="filter-tab" data-cat="digital_out">Digital Out (DO)</button>
+                    <button class="filter-tab" data-cat="analog">Analog (AI/AO)</button>
+                  </div>
+                  <div class="io-search-box">
+                    <input type="text" class="form-control" id="io-search-input" placeholder="Search signal name or category...">
+                  </div>
+                </div>
+                <div class="table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Signal Name</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Value</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="io-signals-tbody">
+                      <tr><td colspan="5" class="text-center text-muted">Loading I/O signals...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Controller Settings & System Hardware Info -->
+            <div class="split-grid">
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">RWS Controller Connection</span>
+                </div>
+                <div class="card-body">
+                  <form id="form-settings">
+                    <div class="form-row-2">
+                      <div class="form-group">
+                        <label>Controller IP</label>
+                        <input type="text" class="form-control font-mono" id="setting-ip" value="192.168.125.1" required>
+                      </div>
+                      <div class="form-group">
+                        <label>Port</label>
+                        <input type="number" class="form-control font-mono" id="setting-port" value="80" required>
+                      </div>
+                    </div>
+                    <div class="form-row-2">
+                      <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" class="form-control" id="setting-user" value="Default User">
+                      </div>
+                      <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" class="form-control" id="setting-pass" value="robotics">
+                      </div>
+                    </div>
+                    <div class="form-row-2">
+                      <div class="form-group">
+                        <label>RAPID Task</label>
+                        <input type="text" class="form-control font-mono" id="setting-task" value="T_ROB1" required>
+                      </div>
+                      <div class="form-group">
+                        <label>Timeout (s)</label>
+                        <input type="number" class="form-control font-mono" id="setting-timeout" value="3.0" step="0.5">
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="setting-sim-mode">
+                        <span>Run in Simulation Mode (No physical hardware connected)</span>
+                      </label>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end;">
+                      <button type="submit" class="btn btn-primary btn-sm">Save & Connect</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Robot Mechanical Specification</span>
+                </div>
+                <div class="card-body">
+                  <div class="metric-row">
+                    <span class="label">Controller Name</span>
+                    <span class="value font-mono" id="sys-ctrl-name">IRC5_Compact_Welding</span>
+                  </div>
+                  <div class="metric-row">
+                    <span class="label">RobotWare Version</span>
+                    <span class="value font-mono" id="sys-rw-version">RobotWare 6.06.03</span>
+                  </div>
+                  <div class="metric-row">
+                    <span class="label">Mechanical Unit</span>
+                    <span class="value font-mono" id="sys-mech-unit">ROB_1</span>
+                  </div>
+                  <div class="metric-row">
+                    <span class="label">Model Proportions</span>
+                    <span class="value font-mono" id="sys-robot-type">ABB IRB 1660ID-6/1.55</span>
+                  </div>
+                  <div class="metric-row">
+                    <span class="label">Handling Payload</span>
+                    <span class="value font-mono" id="sys-payload">6 kg</span>
+                  </div>
+                  <div class="metric-row">
+                    <span class="label">Working Reach</span>
+                    <span class="value font-mono" id="sys-reach">1.55 m</span>
+                  </div>
+                  <div style="display: none;">
+                    <span id="sys-rw-revision"></span>
+                    <span id="sys-system-name"></span>
+                    <span id="sys-num-axes">6</span>
+                    <div id="sys-options-list"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 2: DEDICATED DIGITAL TWIN 3D WORKSTATION ==================== -->
+        <section class="view-panel" id="view-twin">
+          <div class="view-header">
+            <div class="twin-header-title">
+              <h2>ABB IRB 1660ID — 3D Digital Twin</h2>
+              <p class="subtitle">Live low-latency kinematic joint telemetry via WebSocket fan-out</p>
+            </div>
+            <div class="twin-header-badges">
+              <span class="badge badge-success" id="twin-stream-badge">LIVE (10 Hz)</span>
+              <span class="badge badge-neutral font-mono" id="twin-fps-val">60 fps</span>
+            </div>
+          </div>
+
+          <!-- Stale Stream Warning Banner -->
+          <div class="stale-alert-banner" id="twin-stale-banner" style="display: none;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <div class="stale-alert-text">
+              <strong>Stream Stale / Controller Idle:</strong> No new joint readings received in the last second. Model is holding last known pose.
+            </div>
+            <button class="btn btn-sm btn-secondary" id="btn-twin-reconnect">Reconnect Stream</button>
+          </div>
+
+          <!-- Main Digital Twin Layout: 3D Viewport + Telemetry Sidebar -->
+          <div class="twin-workspace-grid">
+            <!-- 3D Canvas Viewport Container -->
+            <div class="twin-viewport-card">
+              <div class="twin-canvas-wrapper" id="digital-twin-full-canvas-container">
+                <!-- Overlay Camera Controls -->
+                <div class="twin-cam-toolbar">
+                  <button class="cam-btn active" data-twin-cam="iso" title="Isometric Perspective">Isometric</button>
+                  <button class="cam-btn" data-twin-cam="front" title="Front Elevation">Front</button>
+                  <button class="cam-btn" data-twin-cam="side" title="Side Elevation">Side</button>
+                  <button class="cam-btn" data-twin-cam="top" title="Top Plan View">Top</button>
+                </div>
+                <!-- Navigation hint -->
+                <div class="twin-hint-overlay">
+                  <span>🖱️ Left: Orbit | Right: Pan | Scroll: Zoom</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Kinematics & Readouts Sidebar -->
+            <div class="twin-telemetry-sidebar">
+              <!-- Joint Readout Card -->
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Live Joint Angles</span>
+                  <div class="card-header-actions" style="display: flex; align-items: center; gap: 8px;">
+                    <button class="btn btn-sm btn-link text-muted" id="btn-twin-reset-signs" title="Reset all axis rotation signs to standard ABB defaults" style="font-size: 11px; padding: 2px 6px;">Reset Signs</button>
+                    <span class="badge badge-info font-mono">ROB_1</span>
+                  </div>
+                </div>
+                <div class="card-body p-3">
+                  <div class="joint-telemetry-list">
+                    <div class="joint-item">
+                      <div class="joint-header">
+                        <span class="joint-name">J1 (Axis 1 Base)</span>
+                        <div class="joint-header-right">
+                          <button class="joint-sign-toggle sign-pos" id="joint-sign-btn-1" data-joint-sign-idx="0" title="Click to toggle Axis 1 direction">+1</button>
+                          <span class="joint-deg font-mono" id="joint-val-1">0.0°</span>
+                        </div>
+                      </div>
+                      <div class="joint-bar-track">
+                        <div class="joint-bar-fill" id="joint-bar-1" style="width: 50%;"></div>
+                      </div>
+                      <div class="joint-limits"><span>-180°</span><span>±180° range</span><span>+180°</span></div>
+                    </div>
+
+                    <div class="joint-item">
+                      <div class="joint-header">
+                        <span class="joint-name">J2 (Axis 2 Lower Arm)</span>
+                        <div class="joint-header-right">
+                          <button class="joint-sign-toggle sign-neg" id="joint-sign-btn-2" data-joint-sign-idx="1" title="Click to toggle Axis 2 direction">-1</button>
+                          <span class="joint-deg font-mono" id="joint-val-2">0.0°</span>
+                        </div>
+                      </div>
+                      <div class="joint-bar-track">
+                        <div class="joint-bar-fill" id="joint-bar-2" style="width: 37.5%;"></div>
+                      </div>
+                      <div class="joint-limits"><span>-90°</span><span>+150/−90° range</span><span>+150°</span></div>
+                    </div>
+
+                    <div class="joint-item">
+                      <div class="joint-header">
+                        <span class="joint-name">J3 (Axis 3 Upper Arm)</span>
+                        <div class="joint-header-right">
+                          <button class="joint-sign-toggle sign-neg" id="joint-sign-btn-3" data-joint-sign-idx="2" title="Click to toggle Axis 3 direction">-1</button>
+                          <span class="joint-deg font-mono" id="joint-val-3">0.0°</span>
+                        </div>
+                      </div>
+                      <div class="joint-bar-track">
+                        <div class="joint-bar-fill" id="joint-bar-3" style="width: 75%;"></div>
+                      </div>
+                      <div class="joint-limits"><span>-238°</span><span>+79/−238° range</span><span>+79°</span></div>
+                    </div>
+
+                    <div class="joint-item">
+                      <div class="joint-header">
+                        <span class="joint-name">J4 (Axis 4 Wrist Roll)</span>
+                        <div class="joint-header-right">
+                          <button class="joint-sign-toggle sign-neg" id="joint-sign-btn-4" data-joint-sign-idx="3" title="Click to toggle Axis 4 direction">-1</button>
+                          <span class="joint-deg font-mono" id="joint-val-4">0.0°</span>
+                        </div>
+                      </div>
+                      <div class="joint-bar-track">
+                        <div class="joint-bar-fill" id="joint-bar-4" style="width: 50%;"></div>
+                      </div>
+                      <div class="joint-limits"><span>-175°</span><span>±175° range</span><span>+175°</span></div>
+                    </div>
+
+                    <div class="joint-item">
+                      <div class="joint-header">
+                        <span class="joint-name">J5 (Axis 5 Wrist Bend)</span>
+                        <div class="joint-header-right">
+                          <button class="joint-sign-toggle sign-neg" id="joint-sign-btn-5" data-joint-sign-idx="4" title="Click to toggle Axis 5 direction">-1</button>
+                          <span class="joint-deg font-mono" id="joint-val-5">0.0°</span>
+                        </div>
+                      </div>
+                      <div class="joint-bar-track">
+                        <div class="joint-bar-fill" id="joint-bar-5" style="width: 50%;"></div>
+                      </div>
+                      <div class="joint-limits"><span>-120°</span><span>±120° range</span><span>+120°</span></div>
+                    </div>
+
+                    <div class="joint-item">
+                      <div class="joint-header">
+                        <span class="joint-name">J6 (Axis 6 Flange Turn)</span>
+                        <div class="joint-header-right">
+                          <button class="joint-sign-toggle sign-neg" id="joint-sign-btn-6" data-joint-sign-idx="5" title="Click to toggle Axis 6 direction">-1</button>
+                          <span class="joint-deg font-mono" id="joint-val-6">0.0°</span>
+                        </div>
+                      </div>
+                      <div class="joint-bar-track">
+                        <div class="joint-bar-fill" id="joint-bar-6" style="width: 50%;"></div>
+                      </div>
+                      <div class="joint-limits"><span>-400°</span><span>±400° range</span><span>+400°</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TCP Cartesian Readout Card -->
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Computed TCP Coordinates</span>
+                  <span class="badge badge-neutral">World Frame</span>
+                </div>
+                <div class="card-body">
+                  <div class="tcp-grid">
+                    <div class="tcp-coord-box">
+                      <span class="tcp-axis">X</span>
+                      <span class="tcp-value font-mono" id="tcp-x-val">0.0</span>
+                      <span class="tcp-unit">mm</span>
+                    </div>
+                    <div class="tcp-coord-box">
+                      <span class="tcp-axis">Y</span>
+                      <span class="tcp-value font-mono" id="tcp-y-val">0.0</span>
+                      <span class="tcp-unit">mm</span>
+                    </div>
+                    <div class="tcp-coord-box">
+                      <span class="tcp-axis">Z</span>
+                      <span class="tcp-value font-mono" id="tcp-z-val">0.0</span>
+                      <span class="tcp-unit">mm</span>
+                    </div>
+                  </div>
+                  <div class="tcp-sub-info mt-2">
+                    <span class="text-muted">Mounted Tool: <strong>ABB Arc Welding Torch</strong></span>
+                    <span class="text-muted">Optical Sensor: <strong>Intel RealSense D455</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Safety Notice Card -->
+              <div class="card safety-note-card">
+                <div class="card-body">
+                  <div class="safety-note-content">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <span><strong>Read-Only Monitoring:</strong> Demonstrates controller feedback. Does not verify station-to-reality cell clearance.</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== VIEW 3: EVENTS & AUDIT LOGS ==================== -->
+        <section class="view-panel" id="view-events">
+          <div class="view-header">
+            <div class="view-header-main">
+              <h2>System Events & Diagnostic Logs</h2>
+              <p class="subtitle">Real-time audit log of controller events, safety interlocks, and user commands</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Controller Event Stream</span>
+              <div class="events-actions">
+                <button class="btn btn-secondary btn-sm" id="btn-clear-events">Clear Log</button>
+                <button class="btn btn-secondary btn-sm" id="btn-export-events">Export JSON</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="events-toolbar">
+                <div class="events-filter-group">
+                  <button class="filter-tab active" data-level="ALL">All Events</button>
+                  <button class="filter-tab" data-level="INFO">Info</button>
+                  <button class="filter-tab" data-level="WARNING">Warnings</button>
+                  <button class="filter-tab" data-level="ERROR">Errors</button>
+                </div>
+              </div>
+
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 140px;">Timestamp</th>
+                      <th style="width: 90px;">Level</th>
+                      <th style="width: 110px;">Source</th>
+                      <th>Message</th>
+                    </tr>
+                  </thead>
+                  <tbody id="events-tbody">
+                    <tr><td colspan="4" class="text-center text-muted">Loading event log...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Safety Confirmation Modal -->
+  <div class="modal-overlay" id="safety-modal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-title">Action Confirmation</h3>
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <p>Are you sure you wish to proceed with this operation?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
+        <button class="btn btn-danger" id="modal-confirm-btn">Confirm Operation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- 3D Graphics & Digital Twin Scripts -->
+  <script src="/static/js/libs/three.min.js"></script>
+  <script src="/static/js/libs/OrbitControls.js"></script>
+  <script src="/static/js/digital_twin.js"></script>
+  <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
